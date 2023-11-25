@@ -37,7 +37,7 @@ func serializeBody(body any) *bytes.Buffer {
 // handleStatusError will log the response and exit the application
 func handleStatusError(resp *http.Response) {
 	fmt.Printf("Received response with error status code: %d\n", resp.StatusCode)
-	if resp.StatusCode == http.StatusMultiStatus {
+	if resp.StatusCode == http.StatusPartialContent {
 		logging.Fatalf("please delete destination file and try again.")
 	}
 
@@ -54,6 +54,11 @@ func parseResponse(response *http.Response, v any) error {
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return fmt.Errorf("io.ReadAll: %v", err)
+	}
+
+	// Response is empty
+	if len(data) == 0 {
+		return nil
 	}
 
 	if err := json.Unmarshal(data, v); err != nil {
