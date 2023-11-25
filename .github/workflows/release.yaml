@@ -1,16 +1,19 @@
 name: Create Release
 on:
-  release:
-    types: [created]
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
-permissions:
-  contents: write
-  packages: write
+
 
 jobs:
  releases-matrix:
     name: Release Go Binary
     runs-on: ubuntu-latest
+    permissions:
+    contents: write
+    packages: write
     strategy:
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
@@ -23,8 +26,15 @@ jobs:
             goos: windows
     steps:
     - uses: actions/checkout@v3
+    - name: Create a Release
+      uses: elgohr/Github-Release-Action@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        title: Release ${{ github.ref }}
     - uses: wangyoucao577/go-release-action@v1
       with:
+        release_name: Release ${{ github.ref }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
