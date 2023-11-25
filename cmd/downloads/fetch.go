@@ -15,7 +15,7 @@ import (
 var fetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "Download a file from a restricted link.",
-	Run:   runCheckCmd,
+	Run:   runFetchCmd,
 }
 
 func createOutputDirIfNotExists(path string) {
