@@ -43,7 +43,7 @@ jobs:
     - uses: wangyoucao577/go-release-action@v1
       with:
         release_name: release-${{ github.ref_name }}
-        release_tag: ${{ github.ref_name }}
+        asset_name: realdebrid-cli-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
