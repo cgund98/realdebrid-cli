@@ -39,3 +39,17 @@ type LinkUnrestrictResponse struct {
 	Download   string `json:"download"`
 	Streamable int    `json:"streamable"`
 }
+
+type Download struct {
+	Id        string `json:"id"`
+	Filename  string `json:"filename"`
+	MimeType  string `json:"mimeType"`
+	FileSize  int    `json:"filesize"`
+	Link      string `json:"link"`
+	Host      string `json:"host"`
+	Chunks    int    `json:"chunks"`
+	Download  string `json:"download"`
+	Generated string `json:"generated"`
+}
+
+type DownloadsListResponse = []Download

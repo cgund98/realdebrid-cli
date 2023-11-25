@@ -3,6 +3,7 @@ package realdebrid
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -42,7 +43,7 @@ func NewController(apiToken string, baseUrl string) *Controller {
 }
 
 // request will send an HTTP request to the RealDebrid API
-func (c *Controller) request(method, endpoint string, body any) *http.Response {
+func (c *Controller) request(method, endpoint string, body any, params ...string) *http.Response {
 
 	// serialize body
 	bodyReader := serializeBody(body)
@@ -51,6 +52,21 @@ func (c *Controller) request(method, endpoint string, body any) *http.Response {
 	if err != nil {
 		logging.Fatalf("client: could not create request: %s\n", err)
 	}
+
+	// Append query parameters
+	if len(params)%2 != 0 {
+		logging.Fatalf("params argument must have an even length.")
+	}
+
+	q := req.URL.Query()
+	i := 0
+	for i < len(params) {
+		key := params[i]
+		value := params[i+1]
+		q.Add(key, value)
+		i += 2
+	}
+	req.URL.RawQuery = q.Encode()
 
 	// Set authorization header with API Token
 	authHeader := fmt.Sprintf("Bearer %s", c.apiToken)
@@ -63,7 +79,7 @@ func (c *Controller) request(method, endpoint string, body any) *http.Response {
 	}
 
 	// Handle error response
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		handleStatusError(resp)
 	}
 
@@ -82,6 +98,14 @@ func (c *Controller) download(url, path string) {
 
 	// Handle error response
 	if resp.HTTPResponse.StatusCode != http.StatusOK {
+		if resp.HTTPResponse.StatusCode == http.StatusPartialContent {
+			fmt.Printf("Error code 206 encountered. Deleting file and trying again...\n")
+			if err := os.Remove(resp.Filename); err != nil {
+				logging.Fatalf("unable to remove file: %v", err)
+			}
+			c.download(url, path)
+			return
+		}
 		handleStatusError(resp.HTTPResponse)
 	}
 
@@ -166,4 +190,37 @@ func (c *Controller) FolderUnrestrict(link string) FolderUnrestrictResponse {
 	}
 
 	return response
+}
+
+func (c *Controller) DownloadsList() DownloadsListResponse {
+	// Make request
+	endpoint := fmt.Sprintf("%s/downloads", c.baseUrl)
+
+	response := DownloadsListResponse{}
+	page := 0
+	for {
+		page += 1
+		resp := c.request(http.MethodGet, endpoint, nil, "page", fmt.Sprint(page))
+
+		// Parse response
+		newPage := DownloadsListResponse{}
+		err := parseResponse(resp, &newPage)
+		if err != nil {
+			logging.Fatalf("unable to parse response: %v", err)
+		}
+
+		if len(newPage) == 0 {
+			break
+		}
+
+		response = append(response, newPage...)
+	}
+
+	return response
+}
+
+func (c *Controller) DownloadDelete(id string) {
+	// Make request
+	endpoint := fmt.Sprintf("%s/downloads/delete/%s", c.baseUrl, id)
+	c.request(http.MethodDelete, endpoint, nil)
 }
