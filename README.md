@@ -14,7 +14,7 @@ Install the latest binary from the releases page of this repository.
 export REAL_DEBRID_API_TOKEN="myapitoken"
 export LINK="https://link.to/my/file.zip"
 
-# 
+# Download a file or folder
 realdebrid downloads \
     $LINK \
     -o $HOME/Downloads/debrid
