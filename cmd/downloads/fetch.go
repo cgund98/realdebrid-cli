@@ -49,19 +49,21 @@ func runFetchCmd(cmd *cobra.Command, args []string) {
 
 	// Parse links file
 	inputLinks := args
-	content, err := os.ReadFile(listFile)
-	if err != nil {
-		logging.Fatalf("unable to parse links file: %v", err)
-	}
-	contentSplit := strings.Fields(string(content))
-	for _, link := range contentSplit {
-		if isUrl(link) {
-			inputLinks = append(inputLinks, link)
+	if listFile != "" {
+		content, err := os.ReadFile(listFile)
+		if err != nil {
+			logging.Fatalf("unable to parse links file: %v", err)
 		}
-	}
+		contentSplit := strings.Fields(string(content))
+		for _, link := range contentSplit {
+			if isUrl(link) {
+				inputLinks = append(inputLinks, link)
+			}
+		}
 
-	if len(inputLinks) > 0 {
-		fmt.Printf("Parsed %d links from input file.\n", len(inputLinks))
+		if len(inputLinks) > 0 {
+			fmt.Printf("Parsed %d links from input file.\n", len(inputLinks))
+		}
 	}
 
 	// Parse folders
