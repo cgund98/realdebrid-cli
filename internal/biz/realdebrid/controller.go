@@ -24,8 +24,9 @@ type Controller struct {
 
 func NewController(apiToken string, baseUrl string) *Controller {
 	httpClient := &retryablehttp.Client{
-		HTTPClient:   cleanhttp.DefaultPooledClient(),
-		Logger:       nil, // Set to nil to keep from writing debug statements
+		HTTPClient: cleanhttp.DefaultPooledClient(),
+		Logger:     nil, // Set to nil to keep from writing debug statements
+		// Logger:       retryablehttp.NewClient().Logger,
 		RetryWaitMin: 1 * time.Second,
 		RetryWaitMax: 30 * time.Second,
 		RetryMax:     4,
