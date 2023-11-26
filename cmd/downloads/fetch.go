@@ -3,7 +3,9 @@ package downloads
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
 	initialize "github.com/cgund98/realdebrid-cli/internal/init"
 	"github.com/cgund98/realdebrid-cli/internal/logging"
@@ -27,8 +29,15 @@ func createOutputDirIfNotExists(path string) {
 	}
 }
 
+func isUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
 func runFetchCmd(cmd *cobra.Command, args []string) {
-	if len(args) < 1 {
+	listFile := viper.GetString("downloads.link_file")
+
+	if listFile == "" && len(args) < 1 {
 		logging.Fatalf("must provide a download url")
 	}
 
@@ -38,19 +47,46 @@ func runFetchCmd(cmd *cobra.Command, args []string) {
 
 	c := initialize.RealDebridController()
 
-	// Unpack folders
-	links := []string{}
-	for _, arg := range args {
-		sublinks := c.FolderUnrestrict(arg)
+	// Parse links file
+	inputLinks := args
+	if listFile != "" {
+		content, err := os.ReadFile(listFile)
+		if err != nil {
+			logging.Fatalf("unable to parse links file: %v", err)
+		}
+		contentSplit := strings.Fields(string(content))
+		for _, link := range contentSplit {
+			if isUrl(link) {
+				inputLinks = append(inputLinks, link)
+			}
+		}
 
-		if len(sublinks) == 0 {
-			links = append(links, arg)
-		} else {
-			links = append(links, sublinks...)
+		if len(inputLinks) > 0 {
+			fmt.Printf("Parsed %d links from input file.\n", len(inputLinks))
+		}
+	}
+
+	// Parse folders
+	skipFolders := viper.GetBool("downloads.skip_folders")
+	links := []string{}
+	if skipFolders {
+		fmt.Println("Skipping folder checks...")
+		links = inputLinks
+	} else {
+		fmt.Println("Checking if links are folders...")
+		for _, inputLink := range inputLinks {
+			sublinks := c.FolderUnrestrict(inputLink)
+
+			if len(sublinks) == 0 {
+				links = append(links, inputLink)
+			} else {
+				links = append(links, sublinks...)
+			}
 		}
 	}
 
 	// Download files
+	fmt.Println("Downloading links...")
 	for _, link := range links {
 		c.LinkDownload(link, outputPath)
 	}

@@ -28,9 +28,22 @@ export LINK="https://link.to/my/file.zip"
 realdebrid downloads fetch $LINK \
     -o $HOME/Downloads/debrid
 
+# Download a list of links stored in a text file
+realdebrid downloads fetch \
+    -f download_links.txt \
+    -o $HOME/Downloads/debrid
+
+# Download a list of links, skipping the parsing of any folders.
+# This can speed up the process when you have a lot of links which
+# you know are not folders.
+realdebrid downloads fetch \
+    -f download_links.txt \
+    -o $HOME/Downloads/debrid \
+    --skip-folders
+
 # Alternatively set token with a flag
 realdebrid downloads fetch $LINK \
-    -o $HOME/Downloads/debrid
+    -o $HOME/Downloads/debrid \
     --token my-api-token
 ```
 
